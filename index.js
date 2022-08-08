@@ -10,14 +10,27 @@ async function loadWeb3() {
 async function load() {
     await loadWeb3();
     window.contract = await loadContract();
-    window.hot_dogs_contract = await loadHotDogContract();
-    updateStatus('Ready!');
+    window.hotDogsContract = await loadHotDogContract();
+    await configureHotDogHooks(window.hotDogsContract);
+    updateHotDogs('Ready!');
 }
 
-function updateStatus(status) {
-    const statusEl = document.getElementById('status');
-    statusEl.innerHTML = status;
+function updateHotDogs(status) {
+    const hotDogsStatus = document.getElementById('hotDogsStatus');
+    hotDogsStatus.innerHTML = status;
     console.log(status);
+}
+
+async function getCurrentAccount() {
+    const accounts = await window.web3.eth.getAccounts();
+    return accounts[0];
+}
+
+async function configureHotDogHooks(contract) {
+    contract.events.HotDogCooked({fromBlock: 0})
+        .on('data', event => getHotDogsNumber())
+    contract.events.HotDogEaten({fromBlock: 0})
+        .on('data', event => getHotDogsNumber())
 }
 
 async function loadContract() {
@@ -32,11 +45,29 @@ async function loadHotDogContract() {
     return await new window.web3.eth.Contract(ABI, contractAddress);
 }
 
-async function printCoolNumber() {
-    updateStatus('fetching Cool Number...');
-    const coolNumber = await window.contract.methods.closingPriceAndTimeOfDLC("oO6rCZIq").call();
-    updateStatus(`coolNumber: ${coolNumber[0]}`);
+async function getHotDogsNumber() {
+    updateHotDogs('fetching hot dogs amount...');
+    const availableHotDogs = await window.hotDogsContract.methods.availableHotDogs().call();
+    updateHotDogs(`${availableHotDogs} Available `);
 }
 
-window.printCoolNumber = printCoolNumber;
+async function eatHotDog() {
+    updateHotDogs('Transaction in progress...');
+    const account = await getCurrentAccount();
+    await window.hotDogsContract.methods.getHotDogs(1).send({ from: account });
+    updateHotDogs('Eaten');
+}
+
+async function cookHotDog() {
+    updateHotDogs('Transaction in progress...');
+    const account = await getCurrentAccount();
+    await window.hotDogsContract.methods.cookHotDogs(1).send({ from: account });
+    updateHotDogs('Cooked');
+}
+
+
+
+window.getHotDogsNumber = getHotDogsNumber;
+window.cookHotDog = cookHotDog;
+window.eatHotDog = eatHotDog;
 load();

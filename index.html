@@ -4,7 +4,7 @@
 <head>
     <meta charset='utf-8'>
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <title>Web 3 Demo</title>
+    <title>The Dashboard</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
 
     <script src='node_modules/web3/dist/web3.min.js'></script>
@@ -12,13 +12,14 @@
 
 <body>
 
-    Web 3 Demo
+    The Dashboard
   <script type="module" src="./index.js"></script>
   <br >
-    <button onclick="printCoolNumber();">Print Cool Number</button>
-    <button onclick="changeCoolNumber();">Change Cool Number</button>
+    <button onclick="getHotDogsNumber();">Fetch Hot Dogs Number</button>
+    <button onclick="eatHotDog();">Eat Hot Dog</button>
+    <button onclick="cookHotDog();">Cook Hot Dog</button>
     <br /><br />
-    Status: <span id="status">Loading...</span>
+    Hot Dogs: <span id="hotDogsStatus">Loading...</span>
 </body>
 
 </html>
