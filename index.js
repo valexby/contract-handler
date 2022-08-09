@@ -22,8 +22,9 @@ async function load() {
         contractsConfig.hotDogs.address
     );
     await configureHotDogHooks(window.hotDogsContract);
-    await updateDLCStatus()
-    await getHotDogsNumber()
+    await configureDLCHooks(window.DLCContract);
+    await updateDLCStatus();
+    await getHotDogsNumber();
 }
 
 function updateStatus(status, elementId) {
@@ -44,13 +45,42 @@ async function configureHotDogHooks(contract) {
         .on('data', event => getHotDogsNumber())
 }
 
+async function configureDLCHooks(contract) {
+    contract.events.NewDLC({fromBlock: 0})
+        .on('data', event => updateDLCStatus())
+    contract.events.CloseDLC({fromBlock: 0})
+        .on('data', event => updateDLCStatus())
+    contract.events.EarlyCloseDLC({fromBlock: 0})
+        .on('data', event => updateDLCStatus())
+}
+
 async function updateDLCStatus() {
     const dlcs = await getDLCs()
     await updateStatus(dlcs.length, ELENENT_DLC_TOTAL_STATUS)
+    const closedDLCs = dlcs.filter(dlc => dlc.actualClosingTime != '0')
     await updateStatus(
-        dlcs.filter(dlc => dlc.actualClosingTime == "0").length,
+        dlcs.length - closedDLCs.length,
         ELEMENT_DLC_OPEN_STATUS
     )
+    // Unfortunately filtering by closingTime from dlcs, not by actualClosingTime and
+    // closedDLCs, because Closing of DLCs doesn't work for now.
+    const newestDLC = dlcs.reduce(
+        (prev, curr) => prev.closingTime < curr.closingTime ? prev : curr
+    )
+    var now
+    // Terrible happend. Accidentally I've uploaded clostingTime with different
+    // integer accuracy:  secs and milisecs
+    if (newestDLC.closingTime > 100000000000) {
+        now = Date.now()
+    } else {
+        now = Date.now() / 1000
+    }
+    const newestDLCAge = Math.round((now - newestDLC.closingTime) / 3600 / 24)
+    await updateStatus(
+        `${newestDLCAge} days`,
+        ELEMENT_DLC_AGE_STATUS
+    )
+
 }
 
 async function getDLCs() {
@@ -83,4 +113,5 @@ async function cookHotDog() {
 window.getHotDogsNumber = getHotDogsNumber;
 window.cookHotDog = cookHotDog;
 window.eatHotDog = eatHotDog;
+window.getDLCs = getDLCs;
 load();
