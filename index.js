@@ -1,3 +1,8 @@
+const ELEMENT_HOT_DOG_STATUS ='hotDogsStatus'
+const ELENENT_DLC_TOTAL_STATUS = 'DLCTotalStatus'
+const ELEMENT_DLC_OPEN_STATUS = 'DLCOpenStatus'
+const ELEMENT_DLC_AGE_STATUS = 'DLCAgeStatus'
+
 async function loadWeb3() {
     if (window.ethereum) {
         window.web3 = new Web3(window.ethereum);
@@ -7,34 +12,23 @@ async function loadWeb3() {
 
 async function load() {
     await loadWeb3();
-    window.DLCContract = await loadDLCContract();
-    window.hotDogsContract = await loadHotDogContract();
+    const contractsConfig = await fetch('./contractsConfig.json').then(res => res.json())
+    window.DLCContract = await new window.web3.eth.Contract(
+        contractsConfig.DLC.abi,
+        contractsConfig.DLC.address
+    );
+    window.hotDogsContract = await new window.web3.eth.Contract(
+        contractsConfig.hotDogs.abi,
+        contractsConfig.hotDogs.address
+    );
     await configureHotDogHooks(window.hotDogsContract);
     await updateDLCStatus()
-    updateHotDogs('Ready!');
+    await getHotDogsNumber()
 }
 
-function updateHotDogs(status) {
-    const hotDogsStatus = document.getElementById('hotDogsStatus');
-    hotDogsStatus.innerHTML = status;
-    console.log(status);
-}
-
-function updateDLCTotal(status) {
-    const DLCTotalStatus = document.getElementById('DLCTotalStatus');
-    DLCTotalStatus.innerHTML = status;
-    console.log(status);
-}
-
-function updateDLCOpen(status) {
-    const DLCOpenStatus = document.getElementById('DLCOpenStatus');
-    DLCOpenStatus.innerHTML = status;
-    console.log(status);
-}
-
-function updateDLCAge(status) {
-    const DLCAgeStatus = document.getElementById('DLCAgeStatus');
-    DLCAgeStatus.innerHTML = status;
+function updateStatus(status, elementId) {
+    const statusElement = document.getElementById(elementId);
+    statusElement.innerHTML = status;
     console.log(status);
 }
 
@@ -50,22 +44,13 @@ async function configureHotDogHooks(contract) {
         .on('data', event => getHotDogsNumber())
 }
 
-async function loadDLCContract() {
-    var ABI = await fetch('./contract_abi.json').then(res => res.json())
-    const contractAddress = "0x6143a931d4bCB38347936fAacFbea432b4F0DF17"
-    return await new window.web3.eth.Contract(ABI, contractAddress);
-}
-
-async function loadHotDogContract() {
-    var ABI = await fetch('./hot_dog_contract_abi.json').then(res => res.json())
-    const contractAddress = "0xD2ce3b3da81095cBcB0761EBd5029c8499221C0F"
-    return await new window.web3.eth.Contract(ABI, contractAddress);
-}
-
 async function updateDLCStatus() {
     const dlcs = await getDLCs()
-    await updateDLCTotal(dlcs.length)
-    await updateDLCOpen(dlcs.filter(dlc => dlc.actualClosingTime == "0").length)
+    await updateStatus(dlcs.length, ELENENT_DLC_TOTAL_STATUS)
+    await updateStatus(
+        dlcs.filter(dlc => dlc.actualClosingTime == "0").length,
+        ELEMENT_DLC_OPEN_STATUS
+    )
 }
 
 async function getDLCs() {
@@ -76,26 +61,24 @@ async function getDLCs() {
 }
 
 async function getHotDogsNumber() {
-    updateHotDogs('fetching hot dogs amount...');
+    updateStatus('fetching hot dogs amount...', ELEMENT_HOT_DOG_STATUS);
     const availableHotDogs = await window.hotDogsContract.methods.availableHotDogs().call();
-    updateHotDogs(`${availableHotDogs} Available `);
+    updateStatus(`${availableHotDogs} Available `, ELEMENT_HOT_DOG_STATUS);
 }
 
 async function eatHotDog() {
-    updateHotDogs('Transaction in progress...');
+    updateStatus('Transaction in progress...', ELEMENT_HOT_DOG_STATUS);
     const account = await getCurrentAccount();
     await window.hotDogsContract.methods.getHotDogs(1).send({ from: account });
-    updateHotDogs('Eaten');
+    updateStatus('Eaten', ELEMENT_HOT_DOG_STATUS);
 }
 
 async function cookHotDog() {
-    updateHotDogs('Transaction in progress...');
+    updateStatus('Transaction in progress...', ELEMENT_HOT_DOG_STATUS);
     const account = await getCurrentAccount();
     await window.hotDogsContract.methods.cookHotDogs(1).send({ from: account });
-    updateHotDogs('Cooked');
+    updateStatus('Cooked', ELEMENT_HOT_DOG_STATUS);
 }
-
-
 
 window.getHotDogsNumber = getHotDogsNumber;
 window.cookHotDog = cookHotDog;
