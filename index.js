@@ -1,4 +1,4 @@
-const ELEMENT_HOT_DOG_STATUS ='hotDogsStatus'
+const ELEMENT_HOT_DOG_STATUS = 'hotDogsStatus'
 const ELENENT_DLC_TOTAL_STATUS = 'DLCTotalStatus'
 const ELEMENT_DLC_OPEN_STATUS = 'DLCOpenStatus'
 const ELEMENT_DLC_AGE_STATUS = 'DLCAgeStatus'
@@ -39,18 +39,28 @@ async function getCurrentAccount() {
 }
 
 async function configureHotDogHooks(contract) {
-    contract.events.HotDogCooked({fromBlock: 0})
+    contract.events.HotDogCooked({
+            fromBlock: 0
+        })
         .on('data', event => getHotDogsNumber())
-    contract.events.HotDogEaten({fromBlock: 0})
+    contract.events.HotDogEaten({
+            fromBlock: 0
+        })
         .on('data', event => getHotDogsNumber())
 }
 
 async function configureDLCHooks(contract) {
-    contract.events.NewDLC({fromBlock: 0})
+    contract.events.NewDLC({
+            fromBlock: 0
+        })
         .on('data', event => updateDLCStatus())
-    contract.events.CloseDLC({fromBlock: 0})
+    contract.events.CloseDLC({
+            fromBlock: 0
+        })
         .on('data', event => updateDLCStatus())
-    contract.events.EarlyCloseDLC({fromBlock: 0})
+    contract.events.EarlyCloseDLC({
+            fromBlock: 0
+        })
         .on('data', event => updateDLCStatus())
 }
 
@@ -99,14 +109,18 @@ async function getHotDogsNumber() {
 async function eatHotDog() {
     updateStatus('Transaction in progress...', ELEMENT_HOT_DOG_STATUS);
     const account = await getCurrentAccount();
-    await window.hotDogsContract.methods.getHotDogs(1).send({ from: account });
+    await window.hotDogsContract.methods.getHotDogs(1).send({
+        from: account
+    });
     updateStatus('Eaten', ELEMENT_HOT_DOG_STATUS);
 }
 
 async function cookHotDog() {
     updateStatus('Transaction in progress...', ELEMENT_HOT_DOG_STATUS);
     const account = await getCurrentAccount();
-    await window.hotDogsContract.methods.cookHotDogs(1).send({ from: account });
+    await window.hotDogsContract.methods.cookHotDogs(1).send({
+        from: account
+    });
     updateStatus('Cooked', ELEMENT_HOT_DOG_STATUS);
 }
 
