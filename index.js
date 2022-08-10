@@ -72,25 +72,27 @@ async function updateDLCStatus() {
         dlcs.length - closedDLCs.length,
         ELEMENT_DLC_OPEN_STATUS
     )
-    // Unfortunately filtering by closingTime from dlcs, not by actualClosingTime and
-    // closedDLCs, because Closing of DLCs doesn't work for now.
-    const newestDLC = dlcs.reduce(
-        (prev, curr) => prev.closingTime < curr.closingTime ? prev : curr
-    )
-    var now
-    // Terrible happend. Accidentally I've uploaded clostingTime with different
-    // integer accuracy:  secs and milisecs
-    if (newestDLC.closingTime > 100000000000) {
-        now = Date.now()
+    // In the blockchain of the test contract there are time values with different precision
+    // so we casting all them to single precision
+    const closingTimes = dlcs.map(dlc => (Date.now() / dlc.closingTime) > 100 ? dlc.closingTime * 1000 : dlc.closingTime)
+    const futureClosingTimes = closingTimes.filter(closingTime => closingTime > Date.now())
+    if (futureClosingTimes.length == 0) {
+        await updateStatus(
+            'All contracts closed',
+            ELEMENT_DLC_AGE_STATUS
+        )
     } else {
-        now = Date.now() / 1000
+        // Unfortunately we filter by closingTime from dlcs, not by actualClosingTime and
+        // closedDLCs, because Closing of DLCs doesn't work for now.
+        const newestDLCClosingTime = futureClosingTimes.reduce(
+            (prev, curr) => prev < curr ? prev : curr
+        )
+        const newestDLCAge = Math.round((Date.now() - newestDLCClosingTime) / 1000 / 3600 / 24)
+        await updateStatus(
+            `${newestDLCAge} days`,
+            ELEMENT_DLC_AGE_STATUS
+        )
     }
-    const newestDLCAge = Math.round((now - newestDLC.closingTime) / 3600 / 24)
-    await updateStatus(
-        `${newestDLCAge} days`,
-        ELEMENT_DLC_AGE_STATUS
-    )
-
 }
 
 async function getDLCs() {
